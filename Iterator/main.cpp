@@ -42,50 +42,42 @@ public:
 template <typename T>
 class Playlist;
 
+// CONCRETE BASE ITERATOR CLASS DECLARATION
+template <typename T>
+class ConcreteIterator : public Iterator<T> {
+public:
+    ConcreteIterator(const Playlist<T>& playlist);
+    void first() override;
+    void next() override;
+    bool hasNext() const override;
+    const T& current() const override;
+    virtual ~ConcreteIterator() = default;
+
+protected:
+    template<typename Compare>
+    void sortIndices(Compare comp);
+    vector<int> index;
+    vector<int>::iterator myIt;
+    const Playlist<T>& playlistRef;
+};
+
 // CONCRETE CLASSES DECLARATIONS
 template <typename T>
-class AlphabeticIterator : public Iterator<T> {
+class AlphabeticIterator : public ConcreteIterator<T> {
 public:
     AlphabeticIterator(const Playlist<T>& playlist);
-    void first() override;
-    void next() override;
-    bool hasNext() const override;
-    const T& current() const override;
-
-private:
-    vector<int> index;
-    vector<int>::iterator myIt;
-    const Playlist<T>& playlistRef;
 };
 
 template <typename T>
-class LengthIterator : public Iterator<T> {
+class LengthIterator : public ConcreteIterator<T> {
 public:
     LengthIterator(const Playlist<T>& playlist);
-    void first() override;
-    void next() override;
-    bool hasNext() const override;
-    const T& current() const override;
-
-private:
-    vector<int> index;
-    vector<int>::iterator myIt;
-    const Playlist<T>& playlistRef;
 };
 
 template <typename T>
-class PopularityIterator : public Iterator<T> {
+class PopularityIterator : public ConcreteIterator<T> {
 public:
     PopularityIterator(const Playlist<T>& playlist);
-    void first() override;
-    void next() override;
-    bool hasNext() const override;
-    const T& current() const override;
-
-private:
-    vector<int> index;
-    vector<int>::iterator myIt;
-    const Playlist<T>& playlistRef;
 };
 
 template <typename T>
@@ -98,7 +90,8 @@ public:
     Iterator<T>* createAlphabeticIterator() const override;
     Iterator<T>* createLengthIterator() const override;
     Iterator<T>* createPopularityIterator() const override;
-
+        
+    friend class ConcreteIterator<T>;
     friend class AlphabeticIterator<T>;
     friend class LengthIterator<T>;
     friend class PopularityIterator<T>;
@@ -116,121 +109,71 @@ void ClientCode();
 Song::Song(const string& t, const string& a, int l, int p)
     : title(t), artist(a), length(l), popularity(p) {}
 
-// ALPHABETIC ITERATOR IMPLEMENTATION
+// CONCRETE ITERATOR BASE CLASS IMPLEMENTATION
 template <typename T>
-AlphabeticIterator<T>::AlphabeticIterator(const Playlist<T>& playlist) : playlistRef(playlist) {
+ConcreteIterator<T>::ConcreteIterator(const Playlist<T>& playlist) : playlistRef(playlist) {
     int tempSize = playlist.privatePlaylist.size();
     for (int i = 0; i < tempSize; i++){
         index.push_back(i);
     }
     
-    // Sort indices based on alphabetical order of song titles
-    sort(index.begin(), index.end(), [&playlist](int a, int b) {
-        return playlist.privatePlaylist[a].title < playlist.privatePlaylist[b].title;
+    myIt = index.begin();
+}
+
+template <typename T>
+template<typename Compare>
+void ConcreteIterator<T>::sortIndices(Compare comp) {
+    sort(index.begin(), index.end(), [this, comp](int a, int b) {
+        return comp(playlistRef.privatePlaylist[a], playlistRef.privatePlaylist[b]);
     });
-
     myIt = index.begin();
 }
 
 template <typename T>
-void AlphabeticIterator<T>::first() {
+void ConcreteIterator<T>::first() {
     myIt = index.begin();
 }
 
 template <typename T>
-void AlphabeticIterator<T>::next() {
+void ConcreteIterator<T>::next() {
     myIt++;
 }
 
 template <typename T>
-bool AlphabeticIterator<T>::hasNext() const {
+bool ConcreteIterator<T>::hasNext() const {
     return (myIt != index.end());
 }
 
 template <typename T>
-const T& AlphabeticIterator<T>::current() const {
+const T& ConcreteIterator<T>::current() const {
     if (myIt == index.end()) {
         throw out_of_range("Iterator has reached the end.");
     }
     return playlistRef.privatePlaylist[*myIt];
+}
+
+// ALPHABETIC ITERATOR IMPLEMENTATION
+template <typename T>
+AlphabeticIterator<T>::AlphabeticIterator(const Playlist<T>& playlist) : ConcreteIterator<T>(playlist) {
+    this->sortIndices([](const T& a, const T& b) {
+        return a.title < b.title;
+    });
 }
 
 // LENGTH ITERATOR IMPLEMENTATION
 template <typename T>
-LengthIterator<T>::LengthIterator(const Playlist<T>& playlist) : playlistRef(playlist) {
-    int tempSize = playlist.privatePlaylist.size();
-    for (int i = 0; i < tempSize; i++){
-        index.push_back(i);
-    }
-    
-    // Sort indices based on length order of songs
-    sort(index.begin(), index.end(), [&playlist](int a, int b) {
-        return playlist.privatePlaylist[a].length > playlist.privatePlaylist[b].length;
+LengthIterator<T>::LengthIterator(const Playlist<T>& playlist) : ConcreteIterator<T>(playlist) {
+    this->sortIndices([](const T& a, const T& b) {
+        return a.length > b.length;
     });
-
-    myIt = index.begin();
-}
-
-template <typename T>
-void LengthIterator<T>::first() {
-    myIt = index.begin();
-}
-
-template <typename T>
-void LengthIterator<T>::next() {
-    myIt++;
-}
-
-template <typename T>
-bool LengthIterator<T>::hasNext() const {
-    return (myIt != index.end());
-}
-
-template <typename T>
-const T& LengthIterator<T>::current() const {
-    if (myIt == index.end()) {
-        throw out_of_range("Iterator has reached the end.");
-    }
-    return playlistRef.privatePlaylist[*myIt];
 }
 
 // POPULARITY ITERATOR IMPLEMENTATION
 template <typename T>
-PopularityIterator<T>::PopularityIterator(const Playlist<T>& playlist) : playlistRef(playlist) {
-    int tempSize = playlist.privatePlaylist.size();
-    for (int i = 0; i < tempSize; i++){
-        index.push_back(i);
-    }
-    
-    // Sort indices based on popularity order of songs
-    sort(index.begin(), index.end(), [&playlist](int a, int b) {
-        return playlist.privatePlaylist[a].popularity > playlist.privatePlaylist[b].popularity;
+PopularityIterator<T>::PopularityIterator(const Playlist<T>& playlist) : ConcreteIterator<T>(playlist) {
+    this->sortIndices([](const T& a, const T& b) {
+        return a.popularity > b.popularity;
     });
-
-    myIt = index.begin();
-}
-
-template <typename T>
-void PopularityIterator<T>::first() {
-    myIt = index.begin();
-}
-
-template <typename T>
-void PopularityIterator<T>::next() {
-    myIt++;
-}
-
-template <typename T>
-bool PopularityIterator<T>::hasNext() const {
-    return (myIt != index.end());
-}
-
-template <typename T>
-const T& PopularityIterator<T>::current() const {
-    if (myIt == index.end()) {
-        throw out_of_range("Iterator has reached the end.");
-    }
-    return playlistRef.privatePlaylist[*myIt];
 }
 
 // PLAYLIST CLASS IMPLEMENTATION
