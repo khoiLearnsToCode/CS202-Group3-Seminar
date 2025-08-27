@@ -121,7 +121,7 @@ ConcreteIterator<T>::ConcreteIterator(const Playlist<T>& playlist) : playlistRef
 }
 
 template <typename T>
-template<typename Compare>
+template <typename Compare>
 void ConcreteIterator<T>::sortIndices(Compare comp) {
     sort(index.begin(), index.end(), [this, comp](int a, int b) {
         return comp(playlistRef.privatePlaylist[a], playlistRef.privatePlaylist[b]);

@@ -1,0 +1,4 @@
+References:
+https://refactoring.guru/design-patterns/iterator
+https://refactoring.guru/design-patterns/iterator/cpp/example
+https://github.com/khoiLearnsToCode/CS202-Group3-Seminar.git
